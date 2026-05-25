@@ -1,0 +1,7 @@
+fastapi>=0.95
+uvicorn[standard]>=0.22
+elasticsearch>=8.6.0
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4  # if platform-specific problems, use system package or conda
+psycopg2-binary>=2.9.7
+pydantic>=1.10
