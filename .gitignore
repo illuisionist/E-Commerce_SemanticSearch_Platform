@@ -15,6 +15,7 @@ cockroach-data-*
 docker-compose.override.yml
 
 # Large raw datasets (never commit)
+data/faiss/
 data/raw/
 data/*.json
 data/raw/*.json

@@ -1,4 +1,4 @@
-# docker-compose.yaml
+# docker-compose.yml
 # Note: intentionally omit top-level "version:" to avoid compose warnings.
 
 services:
@@ -98,3 +98,37 @@ services:
       - SAMPLE_PRODUCTS=10000
       - SAMPLE_REVIEWS=50000
       - PER_PRODUCT_CAP=5
+
+  # Elasticsearch (official arm64 image for Apple Silicon)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1-arm64
+    container_name: elasticsearch
+    # Optional: force platform if needed (uncomment if you want to force linux/arm64)
+    # platform: linux/arm64
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=false        # disable security for local dev only
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf http://localhost:9200/ || exit 1"]
+      interval: 10s
+      retries: 10
+    networks:
+      - default
+
+# volumes — merge with any existing volumes, add esdata
+volumes:
+  esdata:
+    driver: local
