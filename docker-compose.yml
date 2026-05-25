@@ -1,0 +1,100 @@
+# docker-compose.yaml
+# Note: intentionally omit top-level "version:" to avoid compose warnings.
+
+services:
+
+  # CockroachDB node 1
+  cockroach1:
+    image: cockroachdb/cockroach:v23.2.3
+    command:
+      - start
+      - --insecure
+      - --listen-addr=0.0.0.0:26257
+      - --advertise-addr=cockroach1:26257
+      - --join=cockroach1:26257,cockroach2:26257,cockroach3:26257
+    hostname: cockroach1
+    container_name: cockroach1
+    ports:
+      - "26257:26257"   # SQL port for host->container (optional)
+      - "8080:8080"     # Admin UI for cockroach1 (host port)
+    volumes:
+      - ./cockroach-data-1:/cockroach/cockroach-data
+    environment:
+      - COCKROACH_MAX_OFFSET=250ms
+
+  # CockroachDB node 2
+  cockroach2:
+    image: cockroachdb/cockroach:v23.2.3
+    command:
+      - start
+      - --insecure
+      - --listen-addr=0.0.0.0:26257
+      - --advertise-addr=cockroach2:26257
+      - --join=cockroach1:26257,cockroach2:26257,cockroach3:26257
+    hostname: cockroach2
+    container_name: cockroach2
+    volumes:
+      - ./cockroach-data-2:/cockroach/cockroach-data
+    depends_on:
+      - cockroach1
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  # CockroachDB node 3
+  cockroach3:
+    image: cockroachdb/cockroach:v23.2.3
+    command:
+      - start
+      - --insecure
+      - --listen-addr=0.0.0.0:26257
+      - --advertise-addr=cockroach3:26257
+      - --join=cockroach1:26257,cockroach2:26257,cockroach3:26257
+    hostname: cockroach3
+    container_name: cockroach3
+    volumes:
+      - ./cockroach-data-3:/cockroach/cockroach-data
+    depends_on:
+      - cockroach1
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  # Processor service (preprocessing)
+  processor:
+    build: .
+    container_name: dist_ecom_processor
+    entrypoint:
+      - python
+      - /app/scripts/convert_meta_reviews.py
+      - --products-json
+      - /data/raw/products.json
+      - --reviews-json
+      - /data/raw/reviews.json
+      - --out-products
+      - /data/out/products_small.csv
+      - --out-reviews
+      - /data/out/reviews_small.csv
+      - --asin-list
+      - /data/out/asin_sample_list.txt
+      - --sample-products
+      - "10000"
+      - --sample-reviews
+      - "50000"
+      - --per-product-cap
+      - "5"
+      - --seed
+      - "42"
+    volumes:
+      - ./data:/data:rw
+      - ./scripts:/app/scripts:ro
+    depends_on:
+      - cockroach1
+    environment:
+      - SAMPLE_PRODUCTS=10000
+      - SAMPLE_REVIEWS=50000
+      - PER_PRODUCT_CAP=5

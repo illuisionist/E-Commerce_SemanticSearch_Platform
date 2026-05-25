@@ -1,0 +1,28 @@
+cat > .gitignore <<'EOF'
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Docker / Cockroach
+cockroach-data/
+cockroach-data-*
+*.log
+docker-compose.override.yml
+
+# Large raw datasets (never commit)
+data/raw/
+data/*.json
+data/raw/*.json
+data/out/*.json
+echo "newone.png" >> .gitignore
+
+
+# Editors
+.vscode/
+.idea/
+EOF
